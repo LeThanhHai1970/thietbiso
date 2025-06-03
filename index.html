@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Mô phỏng lắp ráp máy tính</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #e7f3ff;
+      margin: 0;
+      padding: 10px;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 10px;
+      font-size: 28px;
+    }
+    #resetBtn {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    #workspace {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    #components {
+      width: 350px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      background-color: #fff;
+      padding: 20px;
+      border: 2px solid #bbb;
+      border-radius: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    .draggable {
+      width: 130px;
+      height: 130px;
+      object-fit: contain;
+      cursor: grab;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      background-color: #f8f8f8;
+    }
+    #desk {
+      width: 800px;
+      height: 600px;
+      background-image: url("hinhpng/ban_lam.png");
+      background-size: cover;
+      background-position: center;
+      border: 3px dashed #666;
+      border-radius: 15px;
+      position: relative;
+    }
+    #score {
+      margin-top: 15px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h2>Kéo các thành phần ĐÚNG của máy tính lên bàn</h2>
+  <button id="resetBtn">🔄 Làm lại</button>
+  <div id="workspace">
+    <div id="components"></div>
+    <div id="desk"></div>
+  </div>
+  <div id="score">
+    ✅ Đúng: <span id="countRight">0</span> |
+    ❌ Sai: <span id="countWrong">0</span>
+  </div>
+  <audio id="audio-dung" src="am_thanh/dung.mp3"></audio>
+  <audio id="audio-sai" src="am_thanh/sai.mp3"></audio>
+  <script>
+    const đúng = [
+      { id: "monitor", src: "hinhpng/man_hinh.png", alt: "Màn hình" },
+      { id: "keyboard", src: "hinhpng/ban_phim.png", alt: "Bàn phím" },
+      { id: "mouse", src: "hinhpng/chuot.png", alt: "Chuột" },
+      { id: "case", src: "hinhpng/than_may.png", alt: "Thân máy" },
+      { id: "speaker", src: "hinhpng/loa.png", alt: "Loa" }
+    ];
+    const sai = [
+      { id: "fan", src: "hinhpng/quat.png", alt: "Quạt" },
+      { id: "lamp", src: "hinhpng/bong_den.png", alt: "Bóng đèn" },
+      { id: "pen", src: "hinhpng/but.png", alt: "Bút" },
+      { id: "chair", src: "hinhpng/ghe.png", alt: "Ghế" },
+      { id: "scissors", src: "hinhpng/keo.png", alt: "Kéo" }
+    ];
+    const audioDung = document.getElementById("audio-dung");
+    const audioSai = document.getElementById("audio-sai");
+    const countRight = document.getElementById("countRight");
+    const countWrong = document.getElementById("countWrong");
+    const desk = document.getElementById("desk");
+    const componentsBox = document.getElementById("components");
+    const resetBtn = document.getElementById("resetBtn");
+    const speech = window.speechSynthesis;
+
+    let scoreRight = 0;
+    let scoreWrong = 0;
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function createItem(data, isCorrect) {
+      const img = document.createElement("img");
+      img.src = data.src;
+      img.alt = data.alt;
+      img.id = data.id;
+      img.className = "draggable " + (isCorrect ? "đúng" : "sai");
+      img.draggable = true;
+      img.dataset.dropped = "false";
+
+      img.addEventListener("dragstart", e => {
+        e.dataTransfer.setData("id", e.target.id);
+      });
+
+      return img;
+    }
+
+    function renderComponents() {
+      componentsBox.innerHTML = "";
+      const allItems = shuffle([...đúng.map(i => ({ ...i, đúng: true })), ...sai.map(i => ({ ...i, đúng: false }))]);
+      allItems.forEach(item => {
+        const el = createItem(item, item.đúng);
+        componentsBox.appendChild(el);
+      });
+    }
+
+    desk.addEventListener("dragover", e => e.preventDefault());
+
+    desk.addEventListener("drop", e => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData("id");
+      const dragged = document.getElementById(id);
+
+      if (!dragged || dragged.dataset.dropped === "true") return;
+
+      dragged.dataset.dropped = "true";
+      dragged.style.position = "absolute";
+      dragged.style.left = `${e.offsetX - 60}px`;
+      dragged.style.top = `${e.offsetY - 60}px`;
+      desk.appendChild(dragged);
+
+      const isCorrect = dragged.classList.contains("đúng");
+      const text = dragged.alt;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "vi-VN";
+      speech.speak(utter);
+
+      if (isCorrect) {
+        audioDung.play();
+        alert("🎉 Hoan hô đúng rồi!");
+        countRight.textContent = ++scoreRight;
+      } else {
+        audioSai.play();
+        alert("❌ Chưa đúng!");
+        countWrong.textContent = ++scoreWrong;
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      scoreRight = 0;
+      scoreWrong = 0;
+      countRight.textContent = "0";
+      countWrong.textContent = "0";
+      desk.innerHTML = "";
+      renderComponents();
+    });
+
+    renderComponents();
+  </script>
+</body>
+</html>
