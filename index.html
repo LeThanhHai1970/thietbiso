@@ -1,181 +1,238 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Mô phỏng lắp ráp máy tính</title>
+  <title>Đồng Hồ Treo Tường + Số</title>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #e7f3ff;
+      background: #f9f7f5;
       margin: 0;
-      padding: 10px;
-      text-align: center;
-    }
-    h2 {
-      margin-top: 10px;
-      font-size: 28px;
-    }
-    #resetBtn {
-      margin: 10px;
-      padding: 12px 24px;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    #workspace {
       display: flex;
-      justify-content: space-between;
-      padding: 20px;
-    }
-    #components {
-      width: 350px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
+      flex-direction: column;
       justify-content: center;
-      background-color: #fff;
-      padding: 20px;
-      border: 2px solid #bbb;
-      border-radius: 10px;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
     }
-    .draggable {
-      width: 130px;
-      height: 130px;
-      object-fit: contain;
-      cursor: grab;
-      border: 2px solid transparent;
-      border-radius: 10px;
-      background-color: #f8f8f8;
-    }
-    #desk {
-      width: 800px;
+
+    .clock {
+      width: 600px;
       height: 600px;
-      background-image: url("hinhpng/ban_lam.png");
-      background-size: cover;
-      background-position: center;
-      border: 3px dashed #666;
-      border-radius: 15px;
+      border: 30px solid #3e2723;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fffdf9, #eee3d0);
+      box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.25),
+        0 10px 30px rgba(0, 0, 0, 0.5);
       position: relative;
     }
-    #score {
-      margin-top: 15px;
-      font-size: 22px;
+
+    .number {
+      position: absolute;
+      font-size: 72px;
       font-weight: bold;
+      color: #3e2723;
+      transform: translate(-50%, -50%);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .hand {
+      position: absolute;
+      bottom: 50%;
+      left: 50%;
+      transform-origin: bottom center;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .hour {
+      width: 12px;
+      height: 140px;
+      background: #3e2723;
+      z-index: 3;
+    }
+
+    .minute {
+      width: 8px;
+      height: 230px;
+      background: #5d4037;
+      z-index: 2;
+    }
+
+    .second {
+      width: 2px;
+      height: 260px;
+      background: #c62828;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .center-dot {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: #3e2723;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    .tick {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center;
+    }
+
+    .tick.small {
+      width: 2px;
+      height: 10px;
+      background: #3e2723;
+      transform: rotate(0deg) translateY(-290px);
+    }
+
+    .tick.big {
+      width: 4px;
+      height: 20px;
+      background: #3e2723;
+      transform: rotate(0deg) translateY(-290px);
+    }
+
+    .digital-clock {
+      margin-top: 30px;
+      font-size: 48px;
+      font-weight: bold;
+      color: #3e2723;
+      background: #fff3e0;
+      padding: 10px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
-  <h2>Kéo các thành phần ĐÚNG của máy tính lên bàn</h2>
-  <button id="resetBtn">🔄 Làm lại</button>
-  <div id="workspace">
-    <div id="components"></div>
-    <div id="desk"></div>
-  </div>
-  <div id="score">
-    ✅ Đúng: <span id="countRight">0</span> |
-    ❌ Sai: <span id="countWrong">0</span>
-  </div>
-  <audio id="audio-dung" src="am_thanh/dung.mp3"></audio>
-  <audio id="audio-sai" src="am_thanh/sai.mp3"></audio>
-  <script>
-    const đúng = [
-      { id: "monitor", src: "hinhpng/man_hinh.png", alt: "Màn hình" },
-      { id: "keyboard", src: "hinhpng/ban_phim.png", alt: "Bàn phím" },
-      { id: "mouse", src: "hinhpng/chuot.png", alt: "Chuột" },
-      { id: "case", src: "hinhpng/than_may.png", alt: "Thân máy" },
-      { id: "speaker", src: "hinhpng/loa.png", alt: "Loa" }
-    ];
-    const sai = [
-      { id: "fan", src: "hinhpng/quat.png", alt: "Quạt" },
-      { id: "lamp", src: "hinhpng/bong_den.png", alt: "Bóng đèn" },
-      { id: "pen", src: "hinhpng/but.png", alt: "Bút" },
-      { id: "chair", src: "hinhpng/ghe.png", alt: "Ghế" },
-      { id: "scissors", src: "hinhpng/keo.png", alt: "Kéo" }
-    ];
-    const audioDung = document.getElementById("audio-dung");
-    const audioSai = document.getElementById("audio-sai");
-    const countRight = document.getElementById("countRight");
-    const countWrong = document.getElementById("countWrong");
-    const desk = document.getElementById("desk");
-    const componentsBox = document.getElementById("components");
-    const resetBtn = document.getElementById("resetBtn");
-    const speech = window.speechSynthesis;
 
-    let scoreRight = 0;
-    let scoreWrong = 0;
+<div class="clock" id="clock">
+  <div class="hand hour" id="hour-hand"></div>
+  <div class="hand minute" id="minute-hand"></div>
+  <div class="hand second" id="second-hand"></div>
+  <div class="center-dot"></div>
+</div>
 
-    function shuffle(array) {
-      return array.sort(() => Math.random() - 0.5);
+<div class="digital-clock" id="digital-time">
+  00:00:00
+</div>
+
+<script>
+  const clock = document.getElementById('clock');
+  const digitalClock = document.getElementById('digital-time');
+
+  // Vạch chia phút và giờ
+  for (let i = 0; i < 60; i++) {
+    const tick = document.createElement('div');
+    tick.className = 'tick ' + (i % 5 === 0 ? 'big' : 'small');
+    tick.style.transform = `rotate(${i * 6}deg) translateY(-290px)`;
+    clock.appendChild(tick);
+  }
+
+  // Số từ 1 đến 12
+  for (let i = 1; i <= 12; i++) {
+    const num = document.createElement('div');
+    num.className = 'number';
+    num.innerText = i;
+
+    const angle = (i * 30) * Math.PI / 180;
+    const radius = 220;
+    const center = 300;
+
+    const x = center + radius * Math.sin(angle);
+    const y = center - radius * Math.cos(angle);
+
+    num.style.left = `${x}px`;
+    num.style.top = `${y}px`;
+    clock.appendChild(num);
+  }
+
+  const hourHand = document.getElementById('hour-hand');
+  const minuteHand = document.getElementById('minute-hand');
+  const secondHand = document.getElementById('second-hand');
+
+  let currentTime = new Date();
+
+  function updateClock() {
+    const now = new Date(currentTime);
+    const s = now.getSeconds();
+    const m = now.getMinutes();
+    const h = now.getHours();
+
+    const sDeg = s * 6;
+    const mDeg = m * 6 + s * 0.1;
+    const hDeg = (h % 12) * 30 + m * 0.5;
+
+    secondHand.style.transform = `rotate(${sDeg}deg)`;
+    minuteHand.style.transform = `rotate(${mDeg}deg)`;
+    hourHand.style.transform = `rotate(${hDeg}deg)`;
+
+    // Cập nhật đồng hồ số
+    digitalClock.textContent =
+      `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+    currentTime.setSeconds(currentTime.getSeconds() + 1);
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Kéo chỉnh kim giờ và phút
+  let dragging = null;
+
+  function getAngle(x, y) {
+    const rect = clock.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = x - centerX;
+    const dy = centerY - y;
+    return (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+  }
+
+  function onMouseMove(e) {
+    if (!dragging) return;
+    const angle = getAngle(e.clientX, e.clientY);
+
+    if (dragging === 'minute') {
+      const minutes = Math.round(angle / 6) % 60;
+      currentTime.setMinutes(minutes);
+      currentTime.setSeconds(0);
+    } else if (dragging === 'hour') {
+      const hours = Math.round(angle / 30) % 12;
+      const isPM = currentTime.getHours() >= 12;
+      currentTime.setHours(hours + (isPM ? 12 : 0));
     }
 
-    function createItem(data, isCorrect) {
-      const img = document.createElement("img");
-      img.src = data.src;
-      img.alt = data.alt;
-      img.id = data.id;
-      img.className = "draggable " + (isCorrect ? "đúng" : "sai");
-      img.draggable = true;
-      img.dataset.dropped = "false";
+    updateClock();
+  }
 
-      img.addEventListener("dragstart", e => {
-        e.dataTransfer.setData("id", e.target.id);
-      });
+  function stopDragging() {
+    dragging = null;
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', stopDragging);
+  }
 
-      return img;
-    }
+  hourHand.addEventListener('mousedown', () => {
+    dragging = 'hour';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', stopDragging);
+  });
 
-    function renderComponents() {
-      componentsBox.innerHTML = "";
-      const allItems = shuffle([...đúng.map(i => ({ ...i, đúng: true })), ...sai.map(i => ({ ...i, đúng: false }))]);
-      allItems.forEach(item => {
-        const el = createItem(item, item.đúng);
-        componentsBox.appendChild(el);
-      });
-    }
+  minuteHand.addEventListener('mousedown', () => {
+    dragging = 'minute';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', stopDragging);
+  });
+</script>
 
-    desk.addEventListener("dragover", e => e.preventDefault());
-
-    desk.addEventListener("drop", e => {
-      e.preventDefault();
-      const id = e.dataTransfer.getData("id");
-      const dragged = document.getElementById(id);
-
-      if (!dragged || dragged.dataset.dropped === "true") return;
-
-      dragged.dataset.dropped = "true";
-      dragged.style.position = "absolute";
-      dragged.style.left = `${e.offsetX - 60}px`;
-      dragged.style.top = `${e.offsetY - 60}px`;
-      desk.appendChild(dragged);
-
-      const isCorrect = dragged.classList.contains("đúng");
-      const text = dragged.alt;
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "vi-VN";
-      speech.speak(utter);
-
-      if (isCorrect) {
-        audioDung.play();
-        alert("🎉 Hoan hô đúng rồi!");
-        countRight.textContent = ++scoreRight;
-      } else {
-        audioSai.play();
-        alert("❌ Chưa đúng!");
-        countWrong.textContent = ++scoreWrong;
-      }
-    });
-
-    resetBtn.addEventListener("click", () => {
-      scoreRight = 0;
-      scoreWrong = 0;
-      countRight.textContent = "0";
-      countWrong.textContent = "0";
-      desk.innerHTML = "";
-      renderComponents();
-    });
-
-    renderComponents();
-  </script>
 </body>
 </html>
